@@ -17,6 +17,7 @@ limitations under the License.
 
 package com.aphidmobile.flip;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
@@ -593,6 +594,39 @@ public class FlipViewController extends AdapterView<Adapter> {
     }
   }
 
+  void checkEmpty() {
+    final Adapter adapter = getAdapter();
+    if (getEmptyView() != null) {
+        updateEmptyStatus((adapter == null) || adapter.isEmpty());
+    }
+  }
+
+  @SuppressLint("WrongCall")
+  private void updateEmptyStatus(boolean empty) {
+
+    if (empty) {
+        if (getEmptyView() != null) {
+            getEmptyView().setVisibility(View.VISIBLE);
+            setVisibility(View.GONE);
+        } else {
+            // If the caller just removed our empty view, make sure the list
+            // view is visible
+            setVisibility(View.VISIBLE);
+        }
+
+        // We are now GONE, so pending layouts will not be dispatched.
+        // Force one here to make sure that the state of the list matches
+        // the state of the adapter.
+        // if (mDataChanged) {
+            onLayout(false, getLeft(), getTop(), getRight(), getBottom());
+        // }
+    } else {
+        if (getEmptyView() != null)
+            getEmptyView().setVisibility(View.GONE);
+        setVisibility(View.VISIBLE);
+    }
+  }
+
   private void onDataChanged() {
     adapterDataCount = adapter.getCount();
     int activeIndex;
@@ -603,7 +637,11 @@ public class FlipViewController extends AdapterView<Adapter> {
     }
 
     releaseViews();
-    setSelection(activeIndex);
+
+    if (adapterDataCount > 0)
+        setSelection(activeIndex);
+    checkEmpty();
+    refreshAllPages();
   }
 
   private class MyDataSetObserver extends DataSetObserver {
